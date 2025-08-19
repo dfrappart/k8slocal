@@ -96,6 +96,13 @@ apt-mark hold kubelet kubeadm kubectl
 systemctl enable kubelet  # enable kubelet service  
 systemctl start kubelet   # start kubelet service
 
+# update apparmor & seccomp
+
+echo "Updating apparmor & seccomp"
+apt install apparmor apparmor-utils seccomp -y
+echo "creating folder for custom seccomp profile"
+mkdir -p /var/lib/kubelet/seccomp/profiles
+
 # install crictl
 echo "Installing crictl"
 CRICTL_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/cri-tools/releases/latest | grep tag_name | cut -d '"' -f 4)
@@ -128,3 +135,11 @@ sha256sum --check hubble-linux-${HUBBLE_ARCH}.tar.gz.sha256sum
 sudo tar xzvfC hubble-linux-${HUBBLE_ARCH}.tar.gz /usr/local/bin
 rm hubble-linux-${HUBBLE_ARCH}.tar.gz{,.sha256sum}
 
+# Configuring swap disabled at bootr with grub
+echo "Configuring swap disabled at boot with grub"
+
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.swap=0"/g' /etc/default/grub
+
+grep GRUB_CMDLINE_LINUX_DEFAULT /etc/default/grub
+
+update-grub

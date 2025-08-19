@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
       k8smasters.vm.hostname = "k8smaster#{i}"
       k8smasters.vm.network  :private_network, ip: "192.168.56.#{i+40}"
       k8smasters.vm.provision "shell", privileged: true,  path: "scripts/k8smaster_install.sh"
-      k8smasters.vm.provision "file", source: "scripts/k8s_postconfig.sh", destination: "/tmp/k8s_postconfig.sh"
+      k8smasters.vm.provision "file", source: "scripts/k8s_postconfig.sh", destination: "/home/vagrant/k8s_postconfig.sh"
     end
   end
   (1..K8SNODE_COUNT).each do |i|
@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
       k8snodes.vm.box = IMAGEK8SNode
       k8snodes.vm.hostname = "k8snode#{i}"
       k8snodes.vm.network  :private_network, ip: "192.168.56.#{i+50}"
-      k8snodes.vm.provision "file", source: "scripts/k8s_postconfig.sh", destination: "/tmp/k8s_postconfig.sh"
+      k8snodes.vm.provision "file", source: "scripts/k8s_postconfig.sh", destination: "/home/vagrant/k8s_postconfig.sh"
       k8snodes.vm.provision "shell", privileged: true,  path: "scripts/k8snode_install.sh"
     end
   end
