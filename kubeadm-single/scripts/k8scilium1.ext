@@ -1,0 +1,6 @@
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = k8scilium1
+IP.1 = 192.168.56.17

@@ -30,7 +30,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v
 
 echo "untainting the node before install"
 
-kubectl taint node k8sserver1 node-role.kubernetes.io/control-plane:NoSchedule-
+kubectl taint node k8scilium1 node-role.kubernetes.io/control-plane:NoSchedule-
 
 # install cilium
 echo "Installing Cilium"
@@ -39,6 +39,7 @@ echo "set variables for cilium installation"
 
 API_SERVER_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
 API_SERVER_PORT='6443'
+POD_CIDR='100.64.0.0/16'
 
 echo "Adding helm repo for cilium"
 
@@ -58,9 +59,15 @@ helm upgrade cilium cilium/cilium \
     --set hubble.relay.enabled=true \
     --set hubble.ui.enabled=true \
     --set k8sServiceHost=${API_SERVER_IP} \
-    --set k8sServicePort=${API_SERVER_PORT}
+    --set k8sServicePort=${API_SERVER_PORT} \
+    --set ipam.operator.clusterPoolIPv4PodCIDRList=${POD_CIDR}
 
 echo "Waiting for Cilium to be ready"
 
+
+
 kubectl -n kube-system rollout restart deployment/cilium-operator
 kubectl -n kube-system rollout restart ds/cilium
+
+kubectl -n kube-system scale --replicas=0 deployment/cilium-operator
+kubectl -n kube-system scale --replicas=1 deployment/cilium-operator

@@ -1,18 +1,9 @@
 #!/bin/sh
 
-# Deploy keys to allow all nodes to connect each others as root
-#mv /tmp/id_rsa*  /root/.ssh/
-
-#chmod 400 /root/.ssh/id_rsa*
-#chown root:root  /root/.ssh/id_rsa*
-
-#cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
-#chmod 400 /root/.ssh/authorized_keys
-#chown root:root /root/.ssh/authorized_keys
-
 # Add current node in  /etc/hosts
 echo "Adding current node in /etc/hosts"
 echo "127.0.1.1 $(hostname)" >> /etc/hosts
+echo "192.168.56.17 $(hostname)" >> /etc/hosts
 
 # Install prerequisite
 echo "apt config"
@@ -94,6 +85,13 @@ apt-mark hold kubelet kubeadm kubectl
 systemctl enable kubelet  # enable kubelet service  
 systemctl start kubelet   # start kubelet service
 
+# update apparmor & seccomp
+
+echo "Updating apparmor & seccomp"
+apt install apparmor apparmor-utils seccomp -y
+echo "creating folder for custom seccomp profile"
+mkdir -p /var/lib/kubelet/seccomp/profiles
+
 # install crictl
 echo "Installing crictl"
 CRICTL_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/cri-tools/releases/latest | grep tag_name | cut -d '"' -f 4)
@@ -103,7 +101,8 @@ tar zxvf crictl-$CRICTL_VERSION-linux-amd64.tar.gz -C /usr/local/bin
 # Init kubeadm
 echo "Initializing kubeadm on $(hostname)"
 export controlplane=$(hostname)
-kubeadm init --control-plane-endpoint=$controlplane --skip-phases=addon/kube-proxy
+kubeadm init --control-plane-endpoint=$controlplane --apiserver-advertise-address "192.168.56.17" --pod-network-cidr "100.64.0.0/16" --service-cidr "100.65.0.0/16" --skip-phases=addon/kube-proxy
+
 # install cilium cli
 
 echo "Initializing cilium cli on $(hostname)"
@@ -126,3 +125,16 @@ sha256sum --check hubble-linux-${HUBBLE_ARCH}.tar.gz.sha256sum
 sudo tar xzvfC hubble-linux-${HUBBLE_ARCH}.tar.gz /usr/local/bin
 rm hubble-linux-${HUBBLE_ARCH}.tar.gz{,.sha256sum}
 
+# Configuring swap disabled at bootr with grub
+echo "Configuring swap disabled at boot with grub"
+
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.swap=0"/g' /etc/default/grub
+
+grep GRUB_CMDLINE_LINUX_DEFAULT /etc/default/grub
+
+update-grub
+
+# creating folder for yaml config
+
+echo "Creating folder for yaml config"
+mkdir -p /home/vagrant/yamlconfig
