@@ -14,6 +14,9 @@ Vagrant.configure("2") do |config|
       config.vm.provision "file", source: "scripts/k8s_postconfig.sh", destination: "/home/vagrant/k8s_postconfig.sh"
       config.vm.provision "file", source: "yamlconfig/ciliumgw.yaml", destination: "/home/vagrant/yamlconfig/ciliumgw.yaml"
       config.vm.provision "file", source: "yamlconfig/demoapp.yaml", destination: "/home/vagrant/yamlconfig/demoapp.yaml"
+      config.vm.provision "file", source: "seccompprofiles/audit.json", destination: "/var/lib/kubelet/seccomp/profiles"
+      config.vm.provision "file", source: "seccompprofiles/violation.json", destination: "/var/lib/kubelet/seccomp/profiles"
+      config.vm.provision "file", source: "seccompprofiles/fine-grained.json", destination: "/var/lib/kubelet/seccomp/profiles"
     end
   end
 end
