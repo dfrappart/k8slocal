@@ -23,6 +23,12 @@ spec:
       labels:
         app: demoapp
     spec:
+      securityContext: {}
+#        seccompProfile:
+#          type: RuntimeDefault
+#        seccompProfile:
+#          type: Localhost
+#          localhostProfile: profiles/audit.json       
       containers:
       - image: nginx
         name: nginx

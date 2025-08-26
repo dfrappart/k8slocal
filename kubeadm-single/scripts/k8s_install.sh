@@ -138,3 +138,5 @@ update-grub
 
 echo "Creating folder for yaml config"
 mkdir -p /home/vagrant/yamlconfig
+mkdir -p /home/vagrant/yamlconfig/gateway
+mkdir -p /home/vagrant/yamlconfig/seccomp
