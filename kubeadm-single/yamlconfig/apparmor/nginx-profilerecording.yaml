@@ -1,0 +1,27 @@
+apiVersion: security-profiles-operator.x-k8s.io/v1alpha1
+kind: ProfileRecording
+metadata:
+  name: nginx-recording
+  namespace: security-profiles-operator
+spec:
+  kind: SeccompProfile
+  recorder: bpf
+  podSelector:
+    matchLabels:
+      app: nginx
+---      
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nginx
+  name: nginx-recording
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
