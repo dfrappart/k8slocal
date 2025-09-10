@@ -1,7 +1,7 @@
 apiVersion: security-profiles-operator.x-k8s.io/v1alpha1
 kind: ProfileRecording
 metadata:
-  name: nginx-recording
+  name: nginx-recording-seccomp
   namespace: security-profiles-operator
 spec:
   kind: SeccompProfile

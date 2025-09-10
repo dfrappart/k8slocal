@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "get cofig file for kubernetes"
+echo "get config file for kubernetes"
 
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -37,7 +37,7 @@ echo "Installing Cilium"
 
 echo "set variables for cilium installation"
 
-API_SERVER_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+API_SERVER_IP='192.168.56.17'
 API_SERVER_PORT='6443'
 POD_CIDR='100.64.0.0/16'
 
@@ -53,6 +53,7 @@ helm upgrade cilium cilium/cilium \
     --install \
     --namespace kube-system \
     --reuse-values \
+    --version "1.18.1" \
     --set kubeProxyReplacement=true \
     --set gatewayAPI.enabled=true \
     --set hubble.enabled=true \
@@ -71,3 +72,6 @@ kubectl -n kube-system rollout restart ds/cilium
 
 kubectl -n kube-system scale --replicas=0 deployment/cilium-operator
 kubectl -n kube-system scale --replicas=1 deployment/cilium-operator
+
+echo "Creating folder for seccomp config"
+sudo mkdir -p /var/lib/kubelet/seccomp/profiles

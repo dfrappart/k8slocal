@@ -25,8 +25,8 @@ echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.
 
 echo "Installing helm"
 
-curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
 sudo apt-get update
 sudo apt-get install helm
 
@@ -85,12 +85,10 @@ apt-mark hold kubelet kubeadm kubectl
 systemctl enable kubelet  # enable kubelet service  
 systemctl start kubelet   # start kubelet service
 
-# update apparmor & seccomp
+# update apparmor
 
-echo "Updating apparmor & seccomp"
-apt install apparmor apparmor-utils seccomp -y
-echo "creating folder for custom seccomp profile"
-mkdir -p /var/lib/kubelet/seccomp/profiles
+echo "Updating apparmor"
+apt install apparmor apparmor-utils -y
 
 # install crictl
 echo "Installing crictl"
@@ -102,6 +100,14 @@ tar zxvf crictl-$CRICTL_VERSION-linux-amd64.tar.gz -C /usr/local/bin
 echo "Initializing kubeadm on $(hostname)"
 export controlplane=$(hostname)
 kubeadm init --control-plane-endpoint=$controlplane --apiserver-advertise-address "192.168.56.17" --pod-network-cidr "100.64.0.0/16" --service-cidr "100.65.0.0/16" --skip-phases=addon/kube-proxy
+
+# install trivy
+
+echo "Initializing trivy on $(hostname)"
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt-get update
+sudo apt-get install trivy -y
 
 # install cilium cli
 
@@ -125,7 +131,8 @@ sha256sum --check hubble-linux-${HUBBLE_ARCH}.tar.gz.sha256sum
 sudo tar xzvfC hubble-linux-${HUBBLE_ARCH}.tar.gz /usr/local/bin
 rm hubble-linux-${HUBBLE_ARCH}.tar.gz{,.sha256sum}
 
-# Configuring swap disabled at bootr with grub
+
+# Configuring swap disabled at boot with grub
 echo "Configuring swap disabled at boot with grub"
 
 sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.swap=0"/g' /etc/default/grub
@@ -133,10 +140,3 @@ sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet syste
 grep GRUB_CMDLINE_LINUX_DEFAULT /etc/default/grub
 
 update-grub
-
-# creating folder for yaml config
-
-echo "Creating folder for yaml config"
-mkdir -p /home/vagrant/yamlconfig
-mkdir -p /home/vagrant/yamlconfig/gateway
-mkdir -p /home/vagrant/yamlconfig/seccomp
