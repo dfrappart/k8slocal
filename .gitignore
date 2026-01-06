@@ -10,3 +10,5 @@ terraformvaultpwd.txt
 cert/
 k3s
 microk8s
+helmlocal
+
