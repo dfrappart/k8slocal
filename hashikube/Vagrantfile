@@ -1,0 +1,40 @@
+K8SMASTER_COUNT = 1
+CONSUL_COUNT = 1
+VAULT_COUNT = 1
+IMAGEK8SMaster = "bento/ubuntu-24.04"
+IMAGECONSUL = "bento/ubuntu-24.04"
+IMAGEVAULT = "bento/ubuntu-24.04"
+
+Vagrant.configure("2") do |config|
+
+  (1..K8SMASTER_COUNT).each do |i|
+    config.vm.define "k8smaster#{i}" do |k8smasters|
+      k8smasters.vm.box = IMAGEK8SMaster
+      k8smasters.vm.hostname = "hashikube#{i}"
+      k8smasters.vm.network  :private_network, ip: "192.168.56.#{i+30}"
+      k8smasters.vm.provision "shell", privileged: true,  path: "scripts/k8s_install.sh"
+      k8smasters.vm.provision "file", source: "scripts/k8s_postconfig.sh", destination: "/home/vagrant/k8s_postconfig.sh"
+    end
+  end
+  (1..VAULT_COUNT).each do |i|
+    config.vm.define "vaultnode#{i}" do |vaultnodes|
+      vaultnodes.vm.box = IMAGEVAULT
+      vaultnodes.vm.hostname = "vault#{i}"
+      vaultnodes.vm.network  :private_network, ip: "192.168.56.#{i+31}"
+      vaultnodes.vm.provision "file", source: "./config/vaultconfig.hcl", destination: "/tmp/config.hcl"
+      vaultnodes.vm.provision "file", source: "./cert/vault.crt", destination: "/tmp/vault.crt"
+      vaultnodes.vm.provision "file", source: "./cert/vault.key", destination: "/tmp/vault.key"
+      vaultnodes.vm.provision "file", source: "./cert/vault-ca.crt", destination: "/tmp/vault-ca.crt"
+      vaultnodes.vm.provision "shell", privileged: true,  path: "scripts/vault_install.sh"
+    end
+  end
+  (1..CONSUL_COUNT).each do |i|
+    config.vm.define "consulnode#{i}" do |consulnodes|
+      consulnodes.vm.box = IMAGECONSUL
+      consulnodes.vm.hostname = "consul#{i}"
+      consulnodes.vm.network  :private_network, ip: "192.168.56.#{i+32}"
+      consulnodes.vm.provision "file", source: "scripts/k8s_postconfig.sh", destination: "/home/vagrant/k8s_postconfig.sh"
+      consulnodes.vm.provision "shell", privileged: true,  path: "scripts/consul_install.sh"
+    end
+  end
+end
