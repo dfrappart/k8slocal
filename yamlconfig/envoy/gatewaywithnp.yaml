@@ -1,0 +1,11 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: envoy-nodeport-gw
+  namespace: envoytest
+spec:
+  gatewayClassName: envoy-nodeport
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
