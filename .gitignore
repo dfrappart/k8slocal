@@ -8,3 +8,5 @@ terraformvaultpwd.txt
 .terraform
 .terraform.lock.hcl
 cert/
+k3s
+microk8s
