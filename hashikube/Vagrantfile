@@ -33,7 +33,7 @@ Vagrant.configure("2") do |config|
       consulnodes.vm.box = IMAGECONSUL
       consulnodes.vm.hostname = "consul#{i}"
       consulnodes.vm.network  :private_network, ip: "192.168.56.#{i+32}"
-      consulnodes.vm.provision "file", source: "scripts/k8s_postconfig.sh", destination: "/home/vagrant/k8s_postconfig.sh"
+      #consulnodes.vm.provision "file", source: "scripts/consul_install.sh", destination: "/home/vagrant/consul_install.sh"
       consulnodes.vm.provision "shell", privileged: true,  path: "scripts/consul_install.sh"
     end
   end

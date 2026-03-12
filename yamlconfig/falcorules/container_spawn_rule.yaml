@@ -1,0 +1,14 @@
+# File: container_spawn_rule.yaml
+
+- rule: Container Spawned
+  desc: >
+    Detects whenever a new container is created or started.
+  condition: >
+    evt.type = container
+  output: >
+    🚀 Container spawned!
+    container=%container.name
+    image=%container.image.repository:%container.image.tag
+    user=%user.name
+  priority: INFO
+  tags: [container, monitoring, lifecycle]

@@ -1,0 +1,16 @@
+# File: container_spawn_rule_to_default_ns.yaml
+
+- rule: Container Spawned from ACR
+  desc: >
+    Detects whenever a new container is created or started with pod in default namesapace.
+  condition: >
+    evt.type = container
+    and k8s.ns.name = "default"
+  output: >
+    🚀 Container spawned in default namespace
+    container=%container.name
+    image=%container.image.repository:%container.image.tag
+    user=%user.name
+    namespace=%k8s.ns.name
+  priority: INFO
+  tags: [container, monitoring, lifecycle]

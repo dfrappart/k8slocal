@@ -1,0 +1,18 @@
+# File: detect_container_file_creation.yaml
+
+- rule: File Created Inside Container
+  desc: >
+    Detects when any file is created or opened for writing inside a container.
+  condition: >
+    container
+    and evt.type in (open, openat)
+    and fd.typefile
+    and (evt.arg.flags contains O_CREAT or evt.arg.flags contains O_WRONLY or evt.arg.flags contains O_RDWR)
+  output: >
+    📄 File created or opened for writing inside container!
+    file=%fd.name
+    container=%container.name
+    image=%container.image.repository:%container.image.tag
+    user=%user.name
+  priority: NOTICE
+  tags: [container, filesystem, write, file-create]

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: amicontained
+  name: amicontained
+spec:
+#  securityContext:
+#    seccompProfile:
+#      type: Unconfined #RuntimeDefault #
+  containers:
+    - args:
+        - amicontained
+      image: yumemaru1979/amicontained
+      name: amicontained
+      securityContext:
+        allowPrivilegeEscalation: false

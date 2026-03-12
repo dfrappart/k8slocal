@@ -11,4 +11,7 @@ cert/
 k3s
 microk8s
 helmlocal
+terraform.tfvars
+*.tfstate
+*.tfstate.backup
 

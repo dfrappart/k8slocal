@@ -32,6 +32,7 @@ done
 
 # prepare vault configuration
 
+mkdir -p /etc/vault.d/tls
 mv /tmp/vault.crt /tmp/vault.key /tmp/vault-ca.crt /etc/vault.d/tls/
 
 chown vault:vault /etc/vault.d/tls/*
@@ -39,7 +40,7 @@ chmod 600 /etc/vault.d/tls/vault.key
 
 # add vault CA to trusted certs
 
-sudo cp /tmp/vault-ca.crt /usr/local/share/ca-certificates/vault-ca.crt
+sudo cp /etc/vault.d/tls/vault-ca.crt /usr/local/share/ca-certificates/vault-ca.crt
 sudo update-ca-certificates
 
 sed -i 's/serverip/'$currentip'/g' /tmp/config.hcl
@@ -49,6 +50,7 @@ mv /tmp/config.hcl /etc/vault.d/config.hcl
 sudo adduser vault --shell=/bin/false --no-create-home --disabled-password --gecos GECOS
 
 # granting access to vault user
+mkdir -p /opt/vault/data
 chmod 700 -R /opt/vault
 chown vault -R /opt/vault
 

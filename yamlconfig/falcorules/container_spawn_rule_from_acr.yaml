@@ -1,0 +1,16 @@
+# File: container_spawn_rule_from_acr.yaml
+
+- rule: Container Spawned from ACR
+  desc: >
+    Detects whenever a new container is created or started from an Azure Container Registry.
+  condition: >
+    evt.type = container
+    and k8s.ns.name = "default"
+    and container.image.repository contains "azurecr.io"
+  output: >
+    🚀 Container spawned but not from acr
+    container=%container.name
+    image=%container.image.repository:%container.image.tag
+    user=%user.name
+  priority: INFO
+  tags: [container, monitoring, lifecycle]

@@ -1,0 +1,28 @@
+# File: custom_registry_rules.yaml
+
+# --------------------------------------------------------
+# List of authorized registries
+# (Use full prefixes so startswith() works correctly)
+# --------------------------------------------------------
+- list: authorized_registries
+  items:
+    - "mycompany.azurecr.io"
+#    - "docker.io/library"
+#    - "gcr.io/my-org"
+#    - "quay.io/trusted"
+
+# --------------------------------------------------------
+# Rule to detect unauthorized registry usage
+# --------------------------------------------------------
+- rule: Unauthorized Container Registry Usage
+  desc: >
+    Detects when a container image is pulled or started from a registry
+    not included in the authorized list.
+  condition: >
+    container
+    and evt.type in (container)
+    and container.image.repository != ""
+    and not startswith(container.image.repository, authorized_registries)
+  output: Unauthorized container registry used! | Container=%container.name Image=%container.image.repository:%container.image.tag Registry=%container.image.repository User=%user.name
+  priority: WARNING
+  tags: [container, registry, supply-chain, compliance]
