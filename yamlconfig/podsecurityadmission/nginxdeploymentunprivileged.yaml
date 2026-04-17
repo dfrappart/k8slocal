@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-unprivileged
+  name: nginx-unprivileged
+  namespace: psa-restricted
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-unprivileged
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: nginx-unprivileged
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - image: nginxinc/nginx-unprivileged
+        name: nginx-unprivileged
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources: {}
+status: {}

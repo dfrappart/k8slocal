@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baselinedeploy
+  name: baselinedeploy
+  namespace: psa-baseline
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: baselinedeploy
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: baselinedeploy
+    spec:
+      volumes:
+        - name: index-html
+          hostPath:
+            path: /etc/kubernetes/nginxvol
+            type: DirectoryOrCreate
+      securityContext:
+        allowPrivilegeEscalation: true
+        seccompProfile:
+          type: Unconfined
+      containers:
+      - image: nginx
+        imagePullPolicy: Always
+        name: nginx
+        securityContext:
+        #  allowPrivilegeEscalation: true
+          seccompProfile:
+            type: Unconfined
+        resources: {}
+        volumeMounts:
+        - name: index-html
+          mountPath: /usr/share/nginx/html
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}
