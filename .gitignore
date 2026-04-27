@@ -14,4 +14,5 @@ helmlocal
 terraform.tfvars
 *.tfstate
 *.tfstate.backup
+*.pem
 
