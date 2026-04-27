@@ -1,0 +1,46 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: set-pod-security-based-on-env
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["namespaces"]
+  mutations:
+    - type: Update
+      field: metadata.labels
+      value:
+        expression: >
+          has(object.metadata.labels["env"]) ?
+          (
+            object.metadata.labels["env"] == "prd" ?
+            {
+              "pod-security.kubernetes.io/enforce": "restricted",
+              "pod-security.kubernetes.io/warn": "restricted",
+              "pod-security.kubernetes.io/audit": "restricted"
+            } :
+            {
+              "pod-security.kubernetes.io/enforce": "baseline",
+              "pod-security.kubernetes.io/warn": "baseline",
+              "pod-security.kubernetes.io/audit": "baseline"
+            }
+          ) :
+          {}
+---
+#apiVersion: admissionregistration.k8s.io/v1beta1
+#kind: MutatingAdmissionPolicyBinding
+#metadata:
+#  name: set-pod-security-based-on-env-binding
+#spec:
+#  policyName: set-pod-security-based-on-env
+#  matchResources:
+#    resourceRules:
+#    - apiGroups: [""]
+#      apiVersions: ["v1"]
+#      operations: ["CREATE", "UPDATE"]
+#      resources: ["namespaces"]   
+#         

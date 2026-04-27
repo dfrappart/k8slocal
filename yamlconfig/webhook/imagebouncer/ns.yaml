@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: imagebouncer
+spec: {}
+status: {}
+---
+# Create certificate and secret
+# Certificat et clé pour le serveur webhook
+#openssl req -nodes -new -x509 -keyout webhook-key.pem -out webhook.pem -subj "/CN=image-bouncer-webhook.default.svc"
+
+# Certificat et clé pour le client API server
+#openssl req -nodes -new -x509 -keyout apiserver-client-key.pem -out apiserver-client.pem
+# kubectl create secret tls tls-image-bouncer-webhook --key webhook-key.pem --cert webhook.pem -n imagebouncer

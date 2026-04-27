@@ -1,0 +1,74 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-bouncer-webhook
+  namespace: imagebouncer
+spec:
+  replicas: 2  # Pour la haute disponibilité
+  selector:
+    matchLabels:
+      app: image-bouncer-webhook
+  template:
+    metadata:
+      labels:
+        app: image-bouncer-webhook
+    spec:
+      containers:
+      - name: image-bouncer-webhook
+        image: flavio/kube-image-bouncer
+        args: ["-k", "/certs/tls.key", "-c", "/certs/tls.crt"]
+        ports:
+        - containerPort: 1323
+        volumeMounts:
+        - name: certs
+          mountPath: /certs
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: tls-image-bouncer-webhook
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-bouncer-webhook
+  namespace: imagebouncer
+spec:
+  ports:
+  - port: 443
+    targetPort: 1323
+  selector:
+    app: image-bouncer-webhook
+---    
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: testcert
+  name: testcert
+  namespace: imagebouncer
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: testcert
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: testcert
+    spec:
+      volumes:
+      - name: certs
+        secret:
+          secretName: tls-image-bouncer-webhook
+      containers:
+      - image: nginx
+        name: nginx
+        resources: {}
+        volumeMounts:
+        - name: certs
+          mountPath: /certs
+          readOnly: true
+status: {}

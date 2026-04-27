@@ -1,0 +1,39 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-pod-security-label
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:   [""]
+      apiVersions: ["v1"]
+      operations:  ["CREATE", "UPDATE"]
+      resources:   ["namespaces"]
+    excludeResourceRules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      operations: ["*"]
+      resources: ["namespaces"]
+      resourceNames: ["kube-system", "kube-public", "kube-node-lease"]
+  validations:
+    - expression: >
+        has(object.metadata.labels) 
+        && "pod-security.kubernetes.io/enforce" in object.metadata.labels
+        && object.metadata.labels["pod-security.kubernetes.io/enforce"] in ["restricted", "baseline"]
+      message: "Namespaces should have a label 'pod-security.kubernetes.io/enforce' defined (ex: pod-security.kubernetes.io/enforce: baseline)."
+      reason: Invalid
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-pod-security-label-binding
+spec:
+  policyName: require-pod-security-label
+  validationActions: [Audit, Deny]
+  #matchResources:
+  #  resourceRules:
+  #  - apiGroups:   [""]
+  #    apiVersions: ["v1"]
+  #    operations:  ["CREATE", "UPDATE"]
+  #    resources:   ["namespaces"]    

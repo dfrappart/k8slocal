@@ -1,0 +1,55 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-pod-env-label
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:   [""]
+      apiVersions: ["v1"]
+      operations:  ["CREATE", "UPDATE"]
+      resources:   ["pods"]
+  validations:
+    - expression: >
+        has(object.metadata.labels) &&
+        "env" in object.metadata.labels &&
+        has(namespaceObject.metadata.labels) &&
+        "env" in namespaceObject.metadata.labels &&
+        object.metadata.labels["env"] == namespaceObject.metadata.labels["env"] &&
+        namespaceObject.metadata.labels["env"] in ["dev", "prd"]
+      messageExpression: >
+        'Pod "' + object.metadata.name +
+        '" in namespace "' + namespaceObject.metadata.name +
+        '" should have a label "env" corresponding to the namespace. ' +
+        'Expected value: ' + namespaceObject.metadata.labels["env"] +
+        '. Current value of the Pod: ' +
+        (has(object.metadata.labels) && "env" in object.metadata.labels ?
+         object.metadata.labels["env"] : 'not defined')
+      reason: Invalid
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-pod-env-dev-label-binding
+spec:
+  policyName: require-pod-env-label
+  validationActions: [Audit, Deny]   
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        env: dev
+        #kubernetes.io/metadata.name: testvapns-dev 
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-pod-env-prd-label-binding
+spec:
+  policyName: require-pod-env-label
+  validationActions: [Audit, Deny]   
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        env: prd
+        #kubernetes.io/metadata.name: testvapns-prd   

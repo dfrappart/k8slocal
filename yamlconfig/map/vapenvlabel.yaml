@@ -1,0 +1,36 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-env-label-on-namespace
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["namespaces"]
+  validations:
+  - expression: >
+      has(object.metadata.labels) 
+      && "env" in object.metadata.labels
+      && object.metadata.labels["env"] in ["dev", "prd", "ppr", "staging"]
+#      && object.metadata.labels["env"] != ""
+    message: "Le Namespace doit avoir un label 'env' défini (ex: env=prod, env=dev)."
+    reason: Invalid
+---
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-env-label-on-namespace-binding
+spec:
+  policyName: require-env-label-on-namespace
+  validationActions: [Deny]
+  matchResources:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["namespaces"] 

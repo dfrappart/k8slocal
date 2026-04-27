@@ -1,0 +1,40 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-env-label-and-annotation-for-loadbalancer
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:   [""]
+      apiVersions: ["v1"]
+      operations:  ["CREATE", "UPDATE"]
+      resources:   ["services"]
+  validations:
+    - expression: >
+        object.spec.type != "LoadBalancer" ||
+        (
+          object.metadata.labels["env"] == "prd" &&
+          (
+            object.metadata.annotations["service.beta.kubernetes.io/azure-load-balancer-internal"] == "true"
+          )
+        )
+      message: >
+        "Les Services de type LoadBalancer doivent avoir :
+        - un label 'env: prd'
+        - une annotation 'service.beta.kubernetes.io/azure-load-balancer-internal: true' si env=prd."
+      reason: Invalid
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-env-label-and-annotation-for-loadbalancer-binding
+spec:
+  policyName: require-env-label-and-annotation-for-loadbalancer
+  validationActions: [Deny]
+  matchResources:
+    resourceRules:
+    - apiGroups:   [""]
+      apiVersions: ["v1"]
+      operations:  ["CREATE"]
+      resources:   ["services"]    
