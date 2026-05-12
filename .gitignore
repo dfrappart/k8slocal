@@ -16,4 +16,5 @@ terraform.tfvars
 *.tfstate.backup
 *.pem
 *VBoxHeadless*
+.DS_Store
 
