@@ -21,12 +21,12 @@ echo "complete -F __start_kubectl k" >> $HOME/.bashrc
 
 echo "Installing Gateway API CRDs"
 
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_gatewayclasses.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_gateways.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_httproutes.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_referencegrants.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/standard/gateway.networking.k8s.io_grpcroutes.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
+helm template eg oci://docker.io/envoyproxy/gateway-crds-helm \
+  --version v1.7.2 \
+  --set crds.gatewayAPI.enabled=true \
+  --set crds.gatewayAPI.channel=standard \
+  --set crds.envoyGateway.enabled=true \
+  | kubectl apply --server-side -f -
 
 echo "untainting the node before install"
 
@@ -53,7 +53,7 @@ helm upgrade cilium cilium/cilium \
     --install \
     --namespace kube-system \
     --reuse-values \
-    --version "1.18.1" \
+    --version "1.20.0-pre.3" \
     --set kubeProxyReplacement=true \
     --set gatewayAPI.enabled=true \
     --set hubble.enabled=true \
@@ -61,7 +61,9 @@ helm upgrade cilium cilium/cilium \
     --set hubble.ui.enabled=true \
     --set k8sServiceHost=${API_SERVER_IP} \
     --set k8sServicePort=${API_SERVER_PORT} \
-    --set ipam.operator.clusterPoolIPv4PodCIDRList=${POD_CIDR}
+    --set ipam.operator.clusterPoolIPv4PodCIDRList=${POD_CIDR} \
+    --set encryption.enabled=true \
+    --set encryption.type=wireguard
 
 echo "Waiting for Cilium to be ready"
 
@@ -75,3 +77,42 @@ kubectl -n kube-system scale --replicas=1 deployment/cilium-operator
 
 echo "Creating folder for seccomp config"
 sudo mkdir -p /var/lib/kubelet/seccomp/profiles
+
+echo "Installing Envoy Gateway"
+
+helm upgrade eg oci://docker.io/envoyproxy/gateway-helm \
+  --install \
+  --version v1.8.0 \
+  -n envoy-gateway-system \
+  --create-namespace \
+  --skip-crds
+
+echo "Installing Nginx Gateway Fabric"
+
+helm upgrade ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
+--install \
+--create-namespace \
+-n nginx-gateway \
+--set nginx.service.type=NodePort \
+--set nginxGateway.gwAPIExperimentalFeatures.enable=true
+
+echo "Installing MetalLB"
+
+helm repo add metallb https://metallb.github.io/metallb
+helm repo update
+helm upgrade metallb metallb/metallb -n metallb-system --create-namespace --version 0.15.3 --install
+
+echo "Installing cert-manager"
+
+helm upgrade \
+  cert-manager oci://quay.io/jetstack/charts/cert-manager \
+  --version v1.20.2 \
+  --namespace cert-manager \
+  --create-namespace \
+  --set crds.enabled=true \
+  --install
+
+helm upgrade kube-prometheus-stack oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack \
+--install \
+--namespace monitoring \
+--create-namespace

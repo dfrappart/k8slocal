@@ -27,6 +27,7 @@ helm template eg oci://docker.io/envoyproxy/gateway-crds-helm \
   --set crds.gatewayAPI.channel=standard \
   --set crds.envoyGateway.enabled=true \
   | kubectl apply --server-side -f -
+  
 echo "untainting the node before install"
 
 kubectl taint node cilium2 node-role.kubernetes.io/control-plane:NoSchedule-
