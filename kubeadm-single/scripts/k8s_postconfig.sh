@@ -22,7 +22,7 @@ echo "complete -F __start_kubectl k" >> $HOME/.bashrc
 echo "Installing Gateway API CRDs"
 
 helm template eg oci://docker.io/envoyproxy/gateway-crds-helm \
-  --version v1.7.2 \
+  --version v1.8.0 \
   --set crds.gatewayAPI.enabled=true \
   --set crds.gatewayAPI.channel=standard \
   --set crds.envoyGateway.enabled=true \
@@ -113,6 +113,6 @@ helm upgrade \
   --install
 
 helm upgrade kube-prometheus-stack oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack \
---install \
---namespace monitoring \
---create-namespace
+  --install \
+  --namespace monitoring \
+  --create-namespace
