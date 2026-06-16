@@ -8,7 +8,7 @@ spec:
   - name: envoy-nodeport-gw
     namespace: envoytest
   hostnames:
-  - "hashikube1"
+  - "k8scalico1"
   rules:
   - backendRefs:
     - name: barbatossvc

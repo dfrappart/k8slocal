@@ -16,5 +16,5 @@ spec:
       certificateRefs:
       - kind: Secret
         group: ""
-        name: hashikube
+        name: k8scalico1
         namespace: certificates
