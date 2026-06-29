@@ -1,0 +1,53 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: inherit-env-label-from-namespace
+spec:
+  # Target only pod creations and updates
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+# Condition : Apply only if the namespace has the label `env` is absent
+  matchConditions:
+    - name: "has-label-and-env-label-is-absent"
+      expression: >
+        !has(object.metadata.labels) ||
+        !('env' in object.metadata.labels)
+  # Behavior on failure
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+    # Mutation : Ajouter les labels de Pod Security Admission
+  mutations:
+  - patchType: "JSONPatch"
+    jsonPatch:
+      expression: >
+        has(object.metadata.labels) ?
+        [
+          JSONPatch{
+            op: "add",
+            path: "/metadata/labels/env",
+            value: namespaceObject.metadata.labels['env']
+          }
+        ]
+        :
+        [
+          JSONPatch{
+            op: "add",
+            path: "/metadata/labels",
+            value: {"env": namespaceObject.metadata.labels['env']}
+          }
+        ]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: inherit-env-label-from-namespace-binding
+spec:
+  policyName: inherit-env-label-from-namespace
+  matchResources:
+    namespaceSelector: 
+      matchExpressions:
+          - { key: env, operator: In, values: [dev,ppr,prd] }

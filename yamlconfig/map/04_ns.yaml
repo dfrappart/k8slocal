@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: testmap1
+  labels:
+    env: prd
+spec: {}
+status: {}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: testmap2
+  labels:
+    env: dev
+spec: {}
+status: {}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: testmap3
+  labels:
+    noenvdefined: thatslife
+spec: {}
+status: {}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: testmap4
+  labels:
+    env: notavalidenv
+spec: {}
+status: {}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: testmap5
+  labels:
+    env: ppr
+spec: {}
+status: {}

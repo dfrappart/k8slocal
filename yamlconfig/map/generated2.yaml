@@ -1,0 +1,42 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: annotate-pod-on-creation
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:   [""]
+      apiVersions: ["v1"]
+      operations:  ["CREATE"]
+      resources:   ["pods"]
+  mutations:
+  - patchType: "JSONPatch"
+    jsonPatch:
+      expression: >
+        has(object.metadata.annotations) ?
+        [
+          JSONPatch{
+            op: "add",
+            path: "/metadata/annotations/policy.example.com~1modified-by",
+            value: "annotate-pod-on-creation"
+          }
+        ]
+        :
+        [
+          JSONPatch{
+            op: "add",
+            path: "/metadata/annotations",
+            value: {"policy.example.com/modified-by": "annotate-pod-on-creation"}
+          }
+        ]
+  reinvocationPolicy: Never
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: annotate-pod-on-creation-binding
+spec:
+  policyName: annotate-pod-on-creation
+  matchResources:
+    namespaceSelector: {}

@@ -1,0 +1,58 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: enforce-restricted-pss-on-non-prd-namespaces
+spec:
+  # Target only namespace creations
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["namespaces"]
+
+  # Condition : Apply only if the namespace has the label `env` different from `prd`
+  matchConditions:
+    - name: "has-env-non-prd-label"
+      expression: >
+        has(object.metadata.labels) &&
+        'env' in object.metadata.labels &&
+        object.metadata.labels['env'] != 'prd'
+
+  # Behavior on failure
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+
+  # Mutation : Add labels for Pod Security Admission
+  mutations:
+    - patchType: "JSONPatch"
+      jsonPatch:
+        expression: >
+          [
+            JSONPatch{
+              op: "add", path: "/metadata/labels/pod-security.kubernetes.io~1audit",
+              value: "restricted"
+            },
+            JSONPatch{
+              op: "add", path: "/metadata/labels/pod-security.kubernetes.io~1warn",
+              value: "restricted"
+            },
+            JSONPatch{
+              op: "add", path: "/metadata/labels/pod-security.kubernetes.io~1audit-version",
+              value: "v1.36"
+            },
+            JSONPatch{
+              op: "add", path: "/metadata/labels/pod-security.kubernetes.io~1warn-version",
+              value: "v1.36"
+            }
+          ]
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: enforce-restricted-pss-on-non-prd-namespaces-binding
+spec:
+  policyName: enforce-restricted-pss-on-non-prd-namespaces
+  matchResources:
+    namespaceSelector: {}

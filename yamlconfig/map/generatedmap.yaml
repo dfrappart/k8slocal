@@ -1,0 +1,89 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: enforce-restricted-pss-defaults-on-prd-pods
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:   [""]
+      apiVersions: ["v1"]
+      operations:  ["CREATE"]
+      resources:   ["pods"]
+  matchConditions:
+  - name: 'namespace-is-prd'
+    expression: >
+      has(namespaceObject.metadata.labels) &&
+      'env' in namespaceObject.metadata.labels &&
+      namespaceObject.metadata.labels['env'] == 'ppr'
+  mutations:
+
+  # 1. Pod-level securityContext defaults
+  - patchType: "ApplyConfiguration"
+    applyConfiguration:
+      expression: >
+        Object{
+          spec: Object.spec{
+            securityContext: Object.spec.securityContext{
+              runAsNonRoot: object.spec.?securityContext.?runAsNonRoot.orValue(true),
+              seccompProfile: Object.spec.securityContext.seccompProfile{
+                type: object.spec.?securityContext.?seccompProfile.?type.orValue("RuntimeDefault")
+              }
+            }
+          }
+        }
+
+  # 2. Per-container securityContext defaults (containers)
+  - patchType: "ApplyConfiguration"
+    applyConfiguration:
+      expression: >
+        Object{
+          spec: Object.spec{
+            containers: object.spec.containers.map(c, Object.spec.containers{
+              name: c.name,
+              securityContext: Object.spec.containers.securityContext{
+                allowPrivilegeEscalation: c.?securityContext.?allowPrivilegeEscalation.orValue(false),
+                capabilities: Object.spec.containers.securityContext.capabilities{
+                  drop: c.?securityContext.?capabilities.?drop.orValue(["ALL"])
+                },
+                runAsNonRoot: c.?securityContext.?runAsNonRoot.orValue(true),
+                seccompProfile: Object.spec.containers.securityContext.seccompProfile{
+                  type: c.?securityContext.?seccompProfile.?type.orValue("RuntimeDefault")
+                }
+              }
+            })
+          }
+        }
+
+  # 3. Per-container securityContext defaults (initContainers, only if present)
+  - patchType: "ApplyConfiguration"
+    applyConfiguration:
+      expression: >
+        Object{
+          spec: Object.spec{
+            initContainers: object.spec.?initContainers.orValue([]).map(c, Object.spec.initContainers{
+              name: c.name,
+              securityContext: Object.spec.initContainers.securityContext{
+                allowPrivilegeEscalation: c.?securityContext.?allowPrivilegeEscalation.orValue(false),
+                capabilities: Object.spec.initContainers.securityContext.capabilities{
+                  drop: c.?securityContext.?capabilities.?drop.orValue(["ALL"])
+                },
+                runAsNonRoot: c.?securityContext.?runAsNonRoot.orValue(true),
+                seccompProfile: Object.spec.initContainers.securityContext.seccompProfile{
+                  type: c.?securityContext.?seccompProfile.?type.orValue("RuntimeDefault")
+                }
+              }
+            })
+          }
+        }
+
+  reinvocationPolicy: Never
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: enforce-restricted-pss-defaults-on-prd-pods-binding
+spec:
+  policyName: enforce-restricted-pss-defaults-on-prd-pods
+  matchResources:
+    namespaceSelector: {}

@@ -17,7 +17,7 @@ spec:
       && "env" in object.metadata.labels
       && object.metadata.labels["env"] in ["dev", "prd", "ppr", "staging"]
 #      && object.metadata.labels["env"] != ""
-    message: "Le Namespace doit avoir un label 'env' défini (ex: env=prod, env=dev)."
+    message: "Namespace should have a valid 'env' defined (dev|prd|ppr|staging)."
     reason: Invalid
 ---
 ---

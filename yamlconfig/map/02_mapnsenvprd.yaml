@@ -1,0 +1,68 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: enforce-restricted-pss-on-prd-namespaces
+spec:
+  # Target only namespace creations
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["namespaces"]
+
+  # Condition : Apply only if the namespace has the label `env=prd`
+  matchConditions:
+    - name: "has-env-prd-label"
+      expression: >
+        has(object.metadata.labels) &&
+        'env' in object.metadata.labels &&
+        object.metadata.labels['env'] == 'prd'
+
+  # Behavior on failure
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+
+  # Mutation : Add labels for Pod Security Admission
+  mutations:
+    - patchType: "JSONPatch"
+      jsonPatch:
+        expression: >
+          [
+            JSONPatch{
+              op: "add", path: "/metadata/labels/pod-security.kubernetes.io~1enforce",
+              value: "restricted"
+            },
+            JSONPatch{
+              op: "add", path: "/metadata/labels/pod-security.kubernetes.io~1enforce-version",
+              value: "v1.36"
+            }
+          ]
+    - patchType: "JSONPatch"
+      jsonPatch:
+        expression: >
+          has(object.metadata.annotations) ?
+          [
+            JSONPatch{
+              op: "add",
+              path: "/metadata/annotations/policy.example.com~1" + policyName,
+              value: "namespace:" + namespaceObject.metadata.name + ",request:" + request.uid
+            }
+          ]
+          :
+          [
+            JSONPatch{
+              op: "add",
+              path: "/metadata/annotations~1",
+              value: {"policy.example.com~1" + policyName: "namespace:" + namespaceObject.metadata.name + ",request:" + request.uid}
+            }
+          ]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: enforce-restricted-pss-on-prd-namespaces-binding
+spec:
+  policyName: enforce-restricted-pss-on-prd-namespaces
+  matchResources:
+    namespaceSelector: {}
