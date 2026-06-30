@@ -19,7 +19,7 @@ spec:
   # Behavior on failure
   failurePolicy: Fail
   reinvocationPolicy: IfNeeded
-    # Mutation : Ajouter les labels de Pod Security Admission
+    # Mutation : Inherit the `env` label from the namespace to the pod
   mutations:
   - patchType: "JSONPatch"
     jsonPatch:
@@ -40,6 +40,26 @@ spec:
             value: {"env": namespaceObject.metadata.labels['env']}
           }
         ]
+  - patchType: "JSONPatch"
+    jsonPatch:
+      expression: >
+        has(object.metadata.annotations) ?
+        [
+          JSONPatch{
+            op: "add",
+            path: "/metadata/annotations/" + jsonpatch.escapeKey("policy.modifiedby.com/inherit-env-label-from-namespace"),
+            value: "true"
+          }
+        ]
+        :
+        [
+          JSONPatch{
+            op: "add",
+            path: "/metadata/annotations",
+            value: {"policy.modifiedby.com/inherit-env-label-from-namespace": "true"}
+          }
+        ]  
+
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicyBinding

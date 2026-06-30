@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations: {}
+  labels:
+    run: testmapppr3
+  name: testmapppr3
+  namespace: testmap5
+spec:
+  securityContext: {}
+  containers:
+  - image: nginxinc/nginx-unprivileged
+    name: testmapppr3
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: testmapppr4
+  name: testmapppr4
+  namespace: testmap5
+spec:
+  securityContext:
+    runAsNonRoot: true
+  containers:
+  - image: nginxinc/nginx-unprivileged
+    name: testmapppr4
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: testmapppr5
+  name: testmapppr5
+  namespace: testmap5
+spec:
+  securityContext:
+    runAsUser: 1000
+  containers:
+ 
+  - image: nginxinc/nginx-unprivileged
+    name: testmapppr5
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: testmapppr6
+  name: testmapppr6
+  namespace: testmap5
+spec:
+  containers:
+  - image: nginxinc/nginx-unprivileged
+    name: testmapppr6
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: testmap-deploy
+  name: testmap-deploy
+  namespace: testmap5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testmap-deploy
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: testmap-deploy
+    spec:
+      containers:
+      - image: nginxinc/nginx-unprivileged
+        name: nginx
+        resources: {}
+status: {}

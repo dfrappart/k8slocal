@@ -45,18 +45,18 @@ spec:
           [
             JSONPatch{
               op: "add",
-              path: "/metadata/annotations/policy.example.com~1" + policyName,
-              value: "namespace:" + namespaceObject.metadata.name + ",request:" + request.uid
+              path: "/metadata/annotations/" + jsonpatch.escapeKey("policy.modifiedby.com/enforce-restricted-pss-on-prd-namespaces"),
+              value: "true"
             }
           ]
           :
           [
             JSONPatch{
               op: "add",
-              path: "/metadata/annotations~1",
-              value: {"policy.example.com~1" + policyName: "namespace:" + namespaceObject.metadata.name + ",request:" + request.uid}
+              path: "/metadata/annotations",
+              value: {"policy.modifiedby.com/" + "enforce-restricted-pss-on-prd-namespaces": "true"}
             }
-          ]
+          ]          
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicyBinding

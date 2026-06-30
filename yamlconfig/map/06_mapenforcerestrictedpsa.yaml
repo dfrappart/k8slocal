@@ -1,48 +1,52 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicy
 metadata:
-  name: patch-pod-security-on-prd-namespaces
+  name: mapenforcerestrictedpsa-on-ppr-namespaces
 spec:
-  # Target only pods
   matchConstraints:
     resourceRules:
-      - apiGroups: [""]
-        apiVersions: ["v1"]
-        operations: ["CREATE", "UPDATE"]
-        resources: ["pods"]
-
-  # Condition : Apply only if the namespace has the label `env` equal to `prd`
-  matchConditions:
-    - name: "has-env-prd-label"
-      expression: >
-        has(object.metadata.labels) &&
-        'env' in object.metadata.labels &&
-        object.metadata.labels['env'] == 'prd' &&
-        object.metadata.labels['env'] == 'ppr'
-
-  # Comportement en cas d'échec
+    - apiGroups:   [""]
+      apiVersions: ["v1"]
+      operations:  ["CREATE", "UPDATE"]
+      resources:   ["pods"]
   failurePolicy: Fail
   reinvocationPolicy: IfNeeded
-
-  # Mutation : Ajouter les labels de Pod Security Admission
   mutations:
 
-  # 1. Pod-level securityContext defaults
-  - patchType: "ApplyConfiguration"
-    applyConfiguration:
+  # Pod-level securityContext: runAsUser, runAsNonRoot, seccompProfile
+  - patchType: "JSONPatch"
+    jsonPatch:
       expression: >
-        Object{
-          spec: Object.spec{
-            securityContext: Object.spec.securityContext{
-              runAsNonRoot: object.spec.?securityContext.?runAsNonRoot.orValue(true),
-              seccompProfile: Object.spec.securityContext.seccompProfile{
-                type: object.spec.?securityContext.?seccompProfile.?type.orValue("RuntimeDefault")
-              }
+        has(object.spec.securityContext) ?
+        [
+          JSONPatch{
+            op: "add",
+            path: "/spec/securityContext/runAsUser",
+            value: 1000
+          },
+          JSONPatch{
+            op: "add",
+            path: "/spec/securityContext/runAsNonRoot",
+            value: true
+          },
+          JSONPatch{
+            op: "add",
+            path: "/spec/securityContext/seccompProfile",
+            value: {"type": "RuntimeDefault"}
+          }
+        ]
+        :
+        [
+          JSONPatch{
+            op: "add",
+            path: "/spec/securityContext",
+            value: Object.spec.securityContext{
+              runAsUser: 1000,
+              runAsNonRoot: true,
+              seccompProfile: Object.spec.securityContext.seccompProfile{type: "RuntimeDefault"}
             }
           }
-        }
-
-  # 2. Per-container securityContext defaults (containers)
+        ]
   - patchType: "ApplyConfiguration"
     applyConfiguration:
       expression: >
@@ -51,48 +55,40 @@ spec:
             containers: object.spec.containers.map(c, Object.spec.containers{
               name: c.name,
               securityContext: Object.spec.containers.securityContext{
-                allowPrivilegeEscalation: c.?securityContext.?allowPrivilegeEscalation.orValue(false),
-                capabilities: Object.spec.containers.securityContext.capabilities{
-                  drop: c.?securityContext.?capabilities.?drop.orValue(["ALL"])
-                },
-                runAsNonRoot: c.?securityContext.?runAsNonRoot.orValue(true),
-                seccompProfile: Object.spec.containers.securityContext.seccompProfile{
-                  type: c.?securityContext.?seccompProfile.?type.orValue("RuntimeDefault")
-                }
+                allowPrivilegeEscalation: false,
+                runAsNonRoot: true
               }
             })
           }
         }
-
-  # 3. Per-container securityContext defaults (initContainers, only if present)
-  - patchType: "ApplyConfiguration"
-    applyConfiguration:
+  # Audit-trail annotation marking this policy touched the pod
+  - patchType: "JSONPatch"
+    jsonPatch:
       expression: >
-        Object{
-          spec: Object.spec{
-            initContainers: object.spec.?initContainers.orValue([]).map(c, Object.spec.initContainers{
-              name: c.name,
-              securityContext: Object.spec.initContainers.securityContext{
-                allowPrivilegeEscalation: c.?securityContext.?allowPrivilegeEscalation.orValue(false),
-                capabilities: Object.spec.initContainers.securityContext.capabilities{
-                  drop: c.?securityContext.?capabilities.?drop.orValue(["ALL"])
-                },
-                runAsNonRoot: c.?securityContext.?runAsNonRoot.orValue(true),
-                seccompProfile: Object.spec.initContainers.securityContext.seccompProfile{
-                  type: c.?securityContext.?seccompProfile.?type.orValue("RuntimeDefault")
-                }
-              }
-            })
+        has(object.metadata.annotations) ?
+        [
+          JSONPatch{
+            op: "add",
+            path: "/metadata/annotations/" + jsonpatch.escapeKey("policy.modifiedby.com/mapenforcerestrictedpsa-on-ppr-namespaces"),
+            value: "true"
           }
-        }
-
-  reinvocationPolicy: Never
+        ]
+        :
+        [
+          JSONPatch{
+            op: "add",
+            path: "/metadata/annotations",
+            value: {"policy.modifiedby.com/mapenforcerestrictedpsa-on-ppr-namespaces": "true"}
+          }
+        ]
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicyBinding
 metadata:
-  name: patch-pod-security-on-prd-namespaces-binding
+  name: mapenforcerestrictedpsa-on-ppr-namespaces-binding
 spec:
-  policyName: patch-pod-security-on-prd-namespaces
+  policyName: mapenforcerestrictedpsa-on-ppr-namespaces
   matchResources:
-    namespaceSelector: {}
+    namespaceSelector:
+      matchLabels:
+        env: ppr

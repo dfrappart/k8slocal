@@ -46,6 +46,25 @@ spec:
               value: "v1.36"
             }
           ]
+    - patchType: "JSONPatch"
+      jsonPatch:
+        expression: >
+          has(object.metadata.annotations) ?
+          [
+            JSONPatch{
+              op: "add",
+              path: "/metadata/annotations/" + jsonpatch.escapeKey("policy.modifiedby.com/enforce-restricted-pss-on-non-prd-namespaces"),
+              value: "true"
+            }
+          ]
+          :
+          [
+            JSONPatch{
+              op: "add",
+              path: "/metadata/annotations",
+              value: {"policy.modifiedby.com/enforce-restricted-pss-on-non-prd-namespaces": "true"}
+            }
+          ]          
 
 ---
 apiVersion: admissionregistration.k8s.io/v1
