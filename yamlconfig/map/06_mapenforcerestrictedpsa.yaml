@@ -47,6 +47,7 @@ spec:
             }
           }
         ]
+  # Container-level securityContext: allowPrivilegeEscalation, runAsNonRoot
   - patchType: "ApplyConfiguration"
     applyConfiguration:
       expression: >
@@ -61,7 +62,20 @@ spec:
             })
           }
         }
-  # Audit-trail annotation marking this policy touched the pod
+  # JSONPatch handles capabilities.drop (atomic list — can't be touched by ApplyConfiguration)
+  - patchType: "JSONPatch"
+    jsonPatch:
+      expression: >
+        object.spec.containers.map(c,
+          JSONPatch{
+            op: "add",
+            path: "/spec/containers/" + string(object.spec.containers.indexOf(c)) + "/securityContext/capabilities",
+            value: Object.spec.containers.securityContext.capabilities{
+              drop: ["ALL"]
+            }
+          }
+        )
+  #Audit-trail annotation marking this policy touched the pod
   - patchType: "JSONPatch"
     jsonPatch:
       expression: >
@@ -90,5 +104,9 @@ spec:
   policyName: mapenforcerestrictedpsa-on-ppr-namespaces
   matchResources:
     namespaceSelector:
-      matchLabels:
-        env: ppr
+      matchExpressions:
+        - key: env
+          operator: In
+          values:
+            - ppr
+            - prd

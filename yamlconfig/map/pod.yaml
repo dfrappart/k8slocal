@@ -92,3 +92,145 @@ spec:
         name: nginx
         resources: {}
 status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: testmap-deploy-multicontainer
+  name: testmap-deploy-multicontainer
+  namespace: testmap5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testmap-deploy-multicontainer
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: testmap-deploy-multicontainer
+    spec:
+      containers:
+      - image: nginxinc/nginx-unprivileged
+        name: nginx
+        resources: {}
+      - name: busybox
+        image: busybox:latest
+        args:
+        - sleep
+        - "1000000"
+status: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: testmapppr7
+  name: testmapppr7
+  namespace: testmap5
+spec:
+  securityContext:
+    runAsUser: 1000
+  containers:
+  - image: nginxinc/nginx-unprivileged
+    name: nginx
+    resources: {}
+  - name: busybox
+    image: busybox:latest
+    args:
+    - sleep
+    - "1000000"
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: testmapprd1
+  name: testmapprd1
+  namespace: testmap1
+spec:
+  containers:
+  - image: nginxinc/nginx-unprivileged
+    name: nginx
+    resources: {}
+  - name: busybox
+    image: busybox:latest
+    args:
+    - sleep
+    - "1000000"
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: testmapprd2
+  name: testmapprd2
+  namespace: testmap1
+spec:
+  containers:
+  - image: nginxinc/nginx-unprivileged
+    name: nginx
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: test-deploy-prd
+  name: test-deploy-prd
+  namespace: testmap1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-deploy-prd
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: test-deploy-prd
+    spec:
+      containers:
+      - image: nginxinc/nginx-unprivileged
+        name: nginx-unprivileged
+        resources: {}
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: test-deploy-multicontainer-prd
+  name: test-deploy-multicontainer-prd
+  namespace: testmap1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-deploy-multicontainer-prd
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: test-deploy-multicontainer-prd
+    spec:
+      containers:
+      - image: nginxinc/nginx-unprivileged
+        name: nginx-unprivileged
+        resources: {}
+      - name: busybox
+        image: busybox:latest
+        args:
+        - sleep
+        - "1000000"
+status: {}
