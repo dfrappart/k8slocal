@@ -16,10 +16,8 @@ spec:
       has(object.metadata.labels) 
       && "env" in object.metadata.labels
       && object.metadata.labels["env"] in ["dev", "prd", "ppr", "staging"]
-#      && object.metadata.labels["env"] != ""
     message: "Namespace should have a valid 'env' defined (dev|prd|ppr|staging)."
     reason: Invalid
----
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicyBinding
