@@ -25,8 +25,12 @@ helm template eg oci://docker.io/envoyproxy/gateway-crds-helm \
   --version v1.8.2 \
   --set crds.gatewayAPI.enabled=true \
   --set crds.gatewayAPI.channel=standard \
-  --set crds.envoyGateway.enabled=true \
-  | kubectl apply --server-side -f -
+  --set crds.envoyGateway.enabled=true > ./yamlconfig/envoy/gatewayapicrds.yaml
+
+sed -i 's/^Pulled/#Pulled/' ./yamlconfig/envoy/gatewayapicrds.yaml
+sed -i 's/^Digest/#Digest/' ./yamlconfig/envoy/gatewayapicrds.yaml
+
+kubectl apply --server-side -f ./yamlconfig/envoy/gatewayapicrds.yaml
 
 echo "untainting the node before install"
 
@@ -62,6 +66,8 @@ helm upgrade cilium cilium/cilium \
     --set k8sServiceHost=${API_SERVER_IP} \
     --set k8sServicePort=${API_SERVER_PORT} \
     --set ipam.operator.clusterPoolIPv4PodCIDRList=${POD_CIDR} \
+    --set prometheus.enabled=false \
+    --set operator.prometheus.enabled=false \
     --set encryption.enabled=true \
     --set encryption.type=wireguard
 
@@ -87,20 +93,20 @@ helm upgrade eg oci://docker.io/envoyproxy/gateway-helm \
   --create-namespace \
   --skip-crds
 
-echo "Installing Nginx Gateway Fabric"
-
-helm upgrade ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
---install \
---create-namespace \
--n nginx-gateway \
---set nginx.service.type=NodePort \
---set nginxGateway.gwAPIExperimentalFeatures.enable=false
-
-echo "Installing MetalLB"
-
-helm repo add metallb https://metallb.github.io/metallb
-helm repo update
-helm upgrade metallb metallb/metallb -n metallb-system --create-namespace --version 0.15.3 --install
+#echo "Installing Nginx Gateway Fabric"
+#
+#helm upgrade ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
+#--install \
+#--create-namespace \
+#-n nginx-gateway \
+#--set nginx.service.type=NodePort \
+#--set nginxGateway.gwAPIExperimentalFeatures.enable=false
+#
+#echo "Installing MetalLB"
+#
+#helm repo add metallb https://metallb.github.io/metallb
+#helm repo update
+#helm upgrade metallb metallb/metallb -n metallb-system --create-namespace --version 0.15.3 --install
 
 echo "Installing cert-manager"
 
@@ -116,3 +122,8 @@ helm upgrade kube-prometheus-stack oci://ghcr.io/prometheus-community/charts/kub
   --install \
   --namespace monitoring \
   --create-namespace
+
+helm upgrade eg-addons oci://docker.io/envoyproxy/gateway-addons-helm \
+  --install \
+  --version v1.8.2 \
+  -n monitoring
