@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cksprep3
+  labels:
+    env: dev
+spec: {}
+status: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: hardened-pod
+  name: hardened-pod
+  namespace: cksprep3
+spec:
+  securityContext: {}
+  volumes:
+    - name: tmp
+      emptyDir: {}
+    - name: cache
+      emptyDir: {}
+    - name: run
+      emptyDir: {}
+  containers:
+  - image: nginx:1.25
+    name: hardened-pod
+    resources: {}
+    volumeMounts: 
+    - name: tmp
+      mountPath: /tmp
+    - name: cache
+      mountPath: /var/cache/nginx/
+    - name: run
+      mountPath: /var/run/
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}

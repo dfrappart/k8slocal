@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cksprep4
+  labels: 
+    env: prd
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.36
+spec: {}
+status: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: conforme
+  namespace: cksprep4
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: busybox
+    image: busybox:1.28
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities: 
+        drop: ["ALL"]
+    args:
+    - sleep
+    - "1000000"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: non-conforme
+  namespace: cksprep4
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.28
+    args:
+    - sleep
+    - "1000000"

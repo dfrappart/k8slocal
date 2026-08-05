@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cksprep2
+  labels:
+    env: dev
+spec: {}
+status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: readonly-sa
+  namespace: cksprep2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: no-token-pod
+  name: no-token-pod
+  namespace: cksprep2
+spec:
+  serviceAccountName: readonly-sa
+  automountServiceAccountToken: false
+  containers:
+  - image: nginx:1.25
+    name: no-token-pod
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}

@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cksprep5
+  labels:
+    env: dev
+spec: {}
+status: {}
+---
+apiVersion: v1
+data:
+  API_KEY: c2VjcmV0MTIz
+kind: Secret
+metadata:
+  name: app-secret
+  namespace: cksprep5
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: secret-pod
+  name: secret-pod
+  namespace: cksprep5
+spec:
+  volumes:
+    - name: secret-volume
+      secret:
+        secretName: app-secret
+  containers:
+    - image: busybox:1.36
+      args:
+      - sleep
+      - "1000"
+      name: secret-pod
+      resources: {}
+      volumeMounts:
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/etc/secret"
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}

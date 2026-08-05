@@ -22,7 +22,7 @@ echo "complete -F __start_kubectl k" >> $HOME/.bashrc
 echo "Installing Gateway API CRDs"
 
 helm template eg oci://docker.io/envoyproxy/gateway-crds-helm \
-  --version v1.8.2 \
+  --version v1.8.3 \
   --set crds.gatewayAPI.enabled=true \
   --set crds.gatewayAPI.channel=standard \
   --set crds.envoyGateway.enabled=true > ./yamlconfig/envoy/gatewayapicrds.yaml
@@ -57,7 +57,7 @@ helm upgrade cilium cilium/cilium \
     --install \
     --namespace kube-system \
     --reuse-values \
-    --version "1.20.0-pre.3" \
+    --version "1.21.0-pre.0" \
     --set kubeProxyReplacement=true \
     --set gatewayAPI.enabled=true \
     --set hubble.enabled=true \
@@ -88,7 +88,7 @@ echo "Installing Envoy Gateway"
 
 helm upgrade eg oci://docker.io/envoyproxy/gateway-helm \
   --install \
-  --version v1.8.2 \
+  --version v1.8.3 \
   -n envoy-gateway-system \
   --create-namespace \
   --skip-crds
@@ -112,7 +112,7 @@ echo "Installing cert-manager"
 
 helm upgrade \
   cert-manager oci://quay.io/jetstack/charts/cert-manager \
-  --version v1.20.2 \
+  --version v1.21.1 \
   --namespace cert-manager \
   --create-namespace \
   --set crds.enabled=true \
@@ -123,7 +123,8 @@ helm upgrade kube-prometheus-stack oci://ghcr.io/prometheus-community/charts/kub
   --namespace monitoring \
   --create-namespace
 
-helm upgrade eg-addons oci://docker.io/envoyproxy/gateway-addons-helm \
-  --install \
-  --version v1.8.2 \
-  -n monitoring
+#helm upgrade eg-addons oci://docker.io/envoyproxy/gateway-addons-helm \
+#  --install \
+#  --version v1.8.3 \
+#  -n monitoring
+#
